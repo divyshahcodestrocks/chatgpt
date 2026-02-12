@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drive Workspace Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Google Drive Workspace Manager</h1>
+      <p>Manage folders/files, permissions, previews, uploads, updates, and deletes from one app.</p>
+    </header>
+
+    <main>
+      <section class="card auth-card">
+        <h2>1) Connect Google Account</h2>
+        <ol>
+          <li>Create a <strong>Web application</strong> OAuth client in Google Cloud Console.</li>
+          <li>Enable <strong>Google Drive API</strong> in the same project.</li>
+          <li>Add your local URL (example: <code>http://localhost:8080</code>) to Authorized JavaScript origins.</li>
+          <li>Paste the Client ID below and click <strong>Authorize</strong>.</li>
+        </ol>
+        <div class="grid-two">
+          <label>
+            Google OAuth Client ID
+            <input id="clientIdInput" placeholder="1234567890-abc.apps.googleusercontent.com" />
+          </label>
+          <label>
+            OAuth Scopes
+            <input id="scopeInput" value="https://www.googleapis.com/auth/drive" />
+          </label>
+        </div>
+        <div class="row">
+          <button id="authorizeBtn">Authorize</button>
+          <button id="revokeBtn" class="secondary">Revoke</button>
+        </div>
+        <p id="authStatus" class="status">Not connected</p>
+      </section>
+
+      <section class="card">
+        <h2>2) Browse Drive</h2>
+        <div class="grid-two">
+          <label>
+            Current Folder ID
+            <input id="folderIdInput" value="root" />
+          </label>
+          <label>
+            Search Query (optional)
+            <input id="searchInput" placeholder="name contains 'report'" />
+          </label>
+        </div>
+        <div class="row wrap">
+          <button id="refreshBtn">Refresh</button>
+          <button id="goRootBtn" class="secondary">Go to Root</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Thumbnail</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Modified</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>3) Create Folder / Upload / Update File</h2>
+        <div class="grid-three">
+          <label>
+            New Folder Name
+            <input id="newFolderName" placeholder="Project Docs" />
+          </label>
+          <label>
+            Parent Folder ID
+            <input id="newFolderParentId" value="root" />
+          </label>
+          <div class="row align-end">
+            <button id="createFolderBtn">Create Folder</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid-two">
+          <label>
+            Upload to Folder ID
+            <input id="uploadFolderId" value="root" />
+          </label>
+          <label>
+            Select File
+            <input id="uploadFileInput" type="file" />
+          </label>
+        </div>
+        <div class="row wrap">
+          <button id="uploadBtn">Upload New File</button>
+          <input id="updateFileId" placeholder="Existing File ID to replace content" />
+          <button id="updateBtn" class="secondary">Update Existing File</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4) Share Item (folder/file)</h2>
+        <div class="grid-three">
+          <label>
+            Item ID
+            <input id="shareItemId" placeholder="Google Drive item ID" />
+          </label>
+          <label>
+            User Email
+            <input id="shareEmail" placeholder="user@example.com" />
+          </label>
+          <label>
+            Permission
+            <select id="shareRole">
+              <option value="reader">Read</option>
+              <option value="commenter">Comment</option>
+              <option value="writer">Write</option>
+            </select>
+          </label>
+        </div>
+        <div class="row wrap">
+          <button id="shareBtn">Share</button>
+          <button id="listPermissionsBtn" class="secondary">View Permissions</button>
+        </div>
+        <pre id="permissionsOutput" class="code-output"></pre>
+      </section>
+
+      <section class="card">
+        <h2>5) Preview</h2>
+        <p>Click “Preview” in the list to open files. Folders can be opened to browse inside.</p>
+        <iframe id="previewFrame" title="Drive File Preview"></iframe>
+      </section>
+
+      <section class="card">
+        <h2>Activity Log</h2>
+        <pre id="logOutput" class="code-output"></pre>
+      </section>
+    </main>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
