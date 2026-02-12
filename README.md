@@ -48,12 +48,14 @@ python3 -m http.server 8080
 
 6. Open `http://localhost:8080`, paste Client ID, keep default scope, click **Authorize**.
 7. In Google popup, choose account and grant Drive permissions.
+8. After first successful grant, next **Authorize** clicks will try silent sign-in first (no forced account-selection popup).
 
 ### Common issues
 
 - **"origin_mismatch"**: your local URL is not listed in Authorized JavaScript origins.
 - **"access blocked" or unverified app**: consent screen/test users are not configured yet.
 - **Popup closes with no token**: browser blocked third-party popup/cookies; allow popups for localhost.
+- **You are asked to verify/select account every time**: this app now avoids forced consent on repeat authorizations; if you click **Revoke**, Google may ask again next time (expected).
 
 ## Notes
 

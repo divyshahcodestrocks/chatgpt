@@ -2,6 +2,7 @@ const state = {
   accessToken: null,
   tokenClient: null,
   currentItems: [],
+  hasGrantedDriveAccess: localStorage.getItem('hasGrantedDriveAccess') === '1',
 };
 
 const els = {
@@ -134,6 +135,8 @@ function initTokenClient() {
         return;
       }
       state.accessToken = resp.access_token;
+      state.hasGrantedDriveAccess = true;
+      localStorage.setItem('hasGrantedDriveAccess', '1');
       setAuthStatus('Connected to Google Drive', true);
       log('Authorization success');
       listItems().catch((err) => log(err.message));
@@ -141,6 +144,13 @@ function initTokenClient() {
   });
 }
 
+async function authorize() {
+  initTokenClient();
+
+  // Avoid forcing account chooser/verification popup on every click.
+  // Try silent token first after initial grant; fallback to consent only if required.
+  const promptMode = state.hasGrantedDriveAccess ? '' : 'consent';
+  state.tokenClient.requestAccessToken({ prompt: promptMode });
 function authorize() {
   initTokenClient();
   state.tokenClient.requestAccessToken({ prompt: 'consent' });
