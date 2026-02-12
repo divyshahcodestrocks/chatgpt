@@ -151,6 +151,9 @@ async function authorize() {
   // Try silent token first after initial grant; fallback to consent only if required.
   const promptMode = state.hasGrantedDriveAccess ? '' : 'consent';
   state.tokenClient.requestAccessToken({ prompt: promptMode });
+function authorize() {
+  initTokenClient();
+  state.tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
 function revoke() {
