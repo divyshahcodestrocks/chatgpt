@@ -1,0 +1,6 @@
+node_modules/
+uploads/
+service-account-key.json
+.env
+*.log
+.DS_Store

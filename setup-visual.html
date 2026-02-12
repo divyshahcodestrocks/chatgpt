@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Instructions - Visual Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        
+        .step {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        
+        .step:hover {
+            transform: translateY(-5px);
+        }
+        
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .step-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .step-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+        
+        .step-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .step-detail {
+            background: #f7f7f7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-top: 15px;
+        }
+        
+        .step-detail code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        
+        .arrow {
+            text-align: center;
+            margin: -12px 0;
+        }
+        
+        .arrow-icon {
+            font-size: 2em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .success-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        
+        .success-box p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Setup Guide</h1>
+        <p class="subtitle">Follow these 5 simple steps to enable no-login Google Drive access</p>
+        
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-icon">☁️</div>
+            <h2 class="step-title">Create Google Cloud Project</h2>
+            <p class="step-description">
+                Set up your Google Cloud Console project and enable the Drive API
+            </p>
+            <div class="step-detail">
+                <strong>Quick Actions:</strong><br>
+                1. Visit <code>console.cloud.google.com</code><br>
+                2. Create new project → Name it "Drive Manager"<br>
+                3. Go to APIs & Services → Library<br>
+                4. Enable "Google Drive API"
+            </div>
+        </div>
+        
+        <div class="arrow"><div class="arrow-icon">↓</div></div>
+        
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-icon">🔑</div>
+            <h2 class="step-title">Create Service Account</h2>
+            <p class="step-description">
+                Generate a service account and download the JSON credentials
+            </p>
+            <div class="step-detail">
+                <strong>Quick Actions:</strong><br>
+                1. Go to IAM & Admin → Service Accounts<br>
+                2. Create Service Account → Name: <code>drive-manager</code><br>
+                3. Click Keys tab → Add Key → Create JSON key<br>
+                4. <strong>Download will start automatically!</strong>
+            </div>
+        </div>
+        
+        <div class="arrow"><div class="arrow-icon">↓</div></div>
+        
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-icon">📧</div>
+            <h2 class="step-title">Share Drive Folder</h2>
+            <p class="step-description">
+                Share your Google Drive folder with the service account email
+            </p>
+            <div class="step-detail">
+                <strong>Quick Actions:</strong><br>
+                1. Copy service account email (looks like: <code>name@project.iam.gserviceaccount.com</code>)<br>
+                2. Go to Google Drive → Right-click folder → Share<br>
+                3. Paste email → Set permission to "Editor"<br>
+                4. Uncheck "Notify" → Send
+            </div>
+        </div>
+        
+        <div class="arrow"><div class="arrow-icon">↓</div></div>
+        
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-icon">📁</div>
+            <h2 class="step-title">Place Credentials File</h2>
+            <p class="step-description">
+                Move the downloaded JSON file to your project directory
+            </p>
+            <div class="step-detail">
+                <strong>Quick Actions:</strong><br>
+                1. Find the downloaded JSON file (probably in Downloads)<br>
+                2. Rename it to: <code>service-account-key.json</code><br>
+                3. Move it to: <code>c:\DivyCode\chatgpt\</code><br>
+                4. Verify it's in the same folder as <code>server.js</code>
+            </div>
+        </div>
+        
+        <div class="arrow"><div class="arrow-icon">↓</div></div>
+        
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-icon">🚀</div>
+            <h2 class="step-title">Run the Application</h2>
+            <p class="step-description">
+                Start the server and access your Drive without login!
+            </p>
+            <div class="step-detail">
+                <strong>Quick Actions:</strong><br>
+                1. Open terminal in <code>c:\DivyCode\chatgpt</code><br>
+                2. Run: <code>npm start</code><br>
+                3. Open browser: <code>http://localhost:3000</code><br>
+                4. <strong>That's it! No login required!</strong>
+            </div>
+        </div>
+        
+        <div class="success-box">
+            <h2>🎉 You're All Set!</h2>
+            <p>Users can now manage Google Drive files without signing in.<br>
+            All authentication is handled by the service account automatically!</p>
+        </div>
+    </div>
+</body>
+</html>

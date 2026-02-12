@@ -3,44 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Drive Workspace Manager</title>
+    <title>Drive Workspace Manager - No Login Required</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <header>
-      <h1>Google Drive Workspace Manager</h1>
-      <p>Manage folders/files, permissions, previews, uploads, updates, and deletes from one app.</p>
+      <h1>🚀 Google Drive Workspace Manager</h1>
+      <p>Manage folders/files, permissions, previews, uploads, and deletes - <strong>No Login Required!</strong></p>
+      <p id="serverStatus" class="status">Checking server...</p>
     </header>
 
     <main>
-      <section class="card auth-card">
-        <h2>1) Connect Google Account</h2>
-        <ol>
-          <li>Create a <strong>Web application</strong> OAuth client in Google Cloud Console.</li>
-          <li>Enable <strong>Google Drive API</strong> in the same project.</li>
-          <li>Add your local URL (example: <code>http://localhost:8080</code>) to Authorized JavaScript origins.</li>
-          <li>Paste the Client ID below and click <strong>Authorize</strong>.</li>
-        </ol>
-        <div class="grid-two">
-          <label>
-            Google OAuth Client ID
-            <input id="clientIdInput" placeholder="1234567890-abc.apps.googleusercontent.com" />
-          </label>
-          <label>
-            OAuth Scopes
-            <input id="scopeInput" value="https://www.googleapis.com/auth/drive" />
-          </label>
-        </div>
-        <div class="row">
-          <button id="authorizeBtn">Authorize</button>
-          <button id="revokeBtn" class="secondary">Revoke</button>
-        </div>
-        <p id="authStatus" class="status">Not connected</p>
-      </section>
 
       <section class="card">
-        <h2>2) Browse Drive</h2>
+        <h2>📁 Browse Drive</h2>
         <div class="grid-two">
           <label>
             Current Folder ID
@@ -73,7 +49,7 @@
       </section>
 
       <section class="card">
-        <h2>3) Create Folder / Upload / Update File</h2>
+        <h2>📤 Create Folder / Upload / Update File</h2>
         <div class="grid-three">
           <label>
             New Folder Name
@@ -108,7 +84,7 @@
       </section>
 
       <section class="card">
-        <h2>4) Share Item (folder/file)</h2>
+        <h2>🔗 Share Item (folder/file)</h2>
         <div class="grid-three">
           <label>
             Item ID
@@ -135,7 +111,7 @@
       </section>
 
       <section class="card">
-        <h2>5) Preview</h2>
+        <h2>👁️ Preview</h2>
         <p>Click “Preview” in the list to open files. Folders can be opened to browse inside.</p>
         <iframe id="previewFrame" title="Drive File Preview"></iframe>
       </section>

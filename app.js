@@ -1,16 +1,13 @@
+// Backend API base URL
+const API_BASE = 'http://localhost:3000/api';
+
 const state = {
-  accessToken: null,
-  tokenClient: null,
   currentItems: [],
-  hasGrantedDriveAccess: localStorage.getItem('hasGrantedDriveAccess') === '1',
+  serverReady: false,
 };
 
 const els = {
-  clientIdInput: document.getElementById('clientIdInput'),
-  scopeInput: document.getElementById('scopeInput'),
-  authorizeBtn: document.getElementById('authorizeBtn'),
-  revokeBtn: document.getElementById('revokeBtn'),
-  authStatus: document.getElementById('authStatus'),
+  serverStatus: document.getElementById('serverStatus'),
   folderIdInput: document.getElementById('folderIdInput'),
   searchInput: document.getElementById('searchInput'),
   refreshBtn: document.getElementById('refreshBtn'),
@@ -41,33 +38,31 @@ function log(message, data) {
   els.logOutput.textContent = `${line}${payload}\n${els.logOutput.textContent}`.trim();
 }
 
-function setAuthStatus(message, ok = false) {
-  els.authStatus.textContent = message;
-  els.authStatus.style.color = ok ? '#0a7a2f' : '#9b1c1c';
+function setServerStatus(message, ok = false) {
+  els.serverStatus.textContent = message;
+  els.serverStatus.style.color = ok ? '#0a7a2f' : '#9b1c1c';
 }
 
-function assertAuth() {
-  if (!state.accessToken) {
-    throw new Error('Please authorize first.');
+// Check server health on startup
+async function checkServerHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    
+    if (data.serviceAccountConfigured) {
+      state.serverReady = true;
+      setServerStatus('✅ Server ready - Connected to Google Drive', true);
+      log('Server is configured and ready');
+      listItems().catch(err => log(err.message));
+    } else {
+      setServerStatus('⚠️ Server running but service account not configured', false);
+      log('Please configure service account credentials (see README)');
+    }
+  } catch (error) {
+    state.serverReady = false;
+    setServerStatus('❌ Backend server not running', false);
+    log('Error: Cannot connect to backend server. Please start the server with: npm start');
   }
-}
-
-async function driveRequest(path, options = {}) {
-  assertAuth();
-  const headers = {
-    Authorization: `Bearer ${state.accessToken}`,
-    ...(options.headers || {}),
-  };
-  const res = await fetch(`https://www.googleapis.com/drive/v3${path}`, {
-    ...options,
-    headers,
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Drive API error (${res.status}): ${errText}`);
-  }
-  if (res.status === 204) return null;
-  return res.json();
 }
 
 function renderItems(items) {
@@ -81,6 +76,7 @@ function renderItems(items) {
       : '<div class="thumb"></div>';
 
     const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
+    const size = item.size ? `${(item.size / 1024).toFixed(2)} KB` : '-';
 
     tr.innerHTML = `
       <td>${thumb}</td>
@@ -103,120 +99,74 @@ function renderItems(items) {
 async function listItems() {
   const folderId = els.folderIdInput.value.trim() || 'root';
   const search = els.searchInput.value.trim();
-  const qParts = [`'${folderId}' in parents`, 'trashed = false'];
-  if (search) qParts.push(`name contains '${search.replace(/'/g, "\\'")}'`);
-  const q = encodeURIComponent(qParts.join(' and '));
-
-  const fields = encodeURIComponent('files(id,name,mimeType,modifiedTime,thumbnailLink,webViewLink)');
-  const data = await driveRequest(`/files?q=${q}&fields=${fields}&orderBy=folder,name`);
+  
+  const params = new URLSearchParams({ folderId });
+  if (search) params.append('search', search);
+  
+  const res = await fetch(`${API_BASE}/drive/files?${params}`);
+  if (!res.ok) {
+    throw new Error(`Failed to list files: ${await res.text()}`);
+  }
+  
+  const data = await res.json();
   renderItems(data.files || []);
   log(`Loaded ${data.files?.length || 0} items from folder ${folderId}`);
-}
-
-function ensureGisReady() {
-  if (!window.google?.accounts?.oauth2) {
-    throw new Error('Google Identity Services not loaded yet. Wait a few seconds and retry.');
-  }
-}
-
-function initTokenClient() {
-  ensureGisReady();
-  const clientId = els.clientIdInput.value.trim();
-  if (!clientId) {
-    throw new Error('Client ID is required.');
-  }
-  state.tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: els.scopeInput.value.trim(),
-    callback: (resp) => {
-      if (resp.error) {
-        setAuthStatus(`Auth failed: ${resp.error}`);
-        log('Auth error', resp);
-        return;
-      }
-      state.accessToken = resp.access_token;
-      state.hasGrantedDriveAccess = true;
-      localStorage.setItem('hasGrantedDriveAccess', '1');
-      setAuthStatus('Connected to Google Drive', true);
-      log('Authorization success');
-      listItems().catch((err) => log(err.message));
-    },
-  });
-}
-
-async function authorize() {
-  initTokenClient();
-
-  // Avoid forcing account chooser/verification popup on every click.
-  // Try silent token first after initial grant; fallback to consent only if required.
-  const promptMode = state.hasGrantedDriveAccess ? '' : 'consent';
-  state.tokenClient.requestAccessToken({ prompt: promptMode });
-function authorize() {
-  initTokenClient();
-  state.tokenClient.requestAccessToken({ prompt: 'consent' });
-}
-
-function revoke() {
-  if (!state.accessToken) return;
-  google.accounts.oauth2.revoke(state.accessToken, () => {
-    state.accessToken = null;
-    setAuthStatus('Token revoked');
-    els.itemsBody.innerHTML = '';
-    els.previewFrame.src = 'about:blank';
-    log('Token revoked');
-  });
 }
 
 async function createFolder() {
   const name = els.newFolderName.value.trim();
   const parentId = els.newFolderParentId.value.trim() || 'root';
-  if (!name) throw new Error('Folder name is required.');
-
-  const body = {
-    name,
-    mimeType: 'application/vnd.google-apps.folder',
-    parents: [parentId],
-  };
-
-  const data = await driveRequest('/files', {
+  
+  if (!name) {
+    throw new Error('Folder name is required.');
+  }
+  
+  const res = await fetch(`${API_BASE}/drive/folders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ name, parentId }),
   });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to create folder: ${await res.text()}`);
+  }
+  
+  const data = await res.json();
   log('Folder created', data);
+  els.newFolderName.value = '';
   await listItems();
 }
 
 async function uploadFile({ updateFileId = null } = {}) {
   const file = els.uploadFileInput.files[0];
-  if (!file) throw new Error('Select a file first.');
-  const folderId = els.uploadFolderId.value.trim() || 'root';
-
-  const metadata = updateFileId
-    ? { name: file.name }
-    : { name: file.name, parents: [folderId] };
-
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', file);
-
-  assertAuth();
-  const endpoint = updateFileId
-    ? `https://www.googleapis.com/upload/drive/v3/files/${updateFileId}?uploadType=multipart`
-    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-
-  const res = await fetch(endpoint, {
-    method: updateFileId ? 'PATCH' : 'POST',
-    headers: { Authorization: `Bearer ${state.accessToken}` },
-    body: form,
-  });
-
-  if (!res.ok) {
-    throw new Error(`Upload failed (${res.status}): ${await res.text()}`);
+  if (!file) {
+    throw new Error('Select a file first.');
   }
-
+  
+  const folderId = els.uploadFolderId.value.trim() || 'root';
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folderId', folderId);
+  
+  const endpoint = updateFileId
+    ? `${API_BASE}/drive/files/${updateFileId}`
+    : `${API_BASE}/drive/upload`;
+  
+  const method = updateFileId ? 'PATCH' : 'POST';
+  
+  const res = await fetch(endpoint, {
+    method,
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Upload failed: ${await res.text()}`);
+  }
+  
   const data = await res.json();
   log(updateFileId ? 'File updated' : 'File uploaded', data);
+  els.uploadFileInput.value = '';
+  if (updateFileId) els.updateFileId.value = '';
   await listItems();
 }
 
@@ -224,42 +174,62 @@ async function shareItem() {
   const fileId = els.shareItemId.value.trim();
   const emailAddress = els.shareEmail.value.trim();
   const role = els.shareRole.value;
-
+  
   if (!fileId || !emailAddress) {
     throw new Error('Item ID and user email are required.');
   }
-
-  const body = { type: 'user', role, emailAddress };
-  const data = await driveRequest(`/files/${fileId}/permissions?sendNotificationEmail=true`, {
+  
+  const res = await fetch(`${API_BASE}/drive/files/${fileId}/permissions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ emailAddress, role }),
   });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to share: ${await res.text()}`);
+  }
+  
+  const data = await res.json();
   log('Permission created', data);
 }
 
 async function listPermissions() {
   const fileId = els.shareItemId.value.trim();
-  if (!fileId) throw new Error('Item ID required.');
-  const data = await driveRequest(`/files/${fileId}/permissions`);
+  if (!fileId) {
+    throw new Error('Item ID required.');
+  }
+  
+  const res = await fetch(`${API_BASE}/drive/files/${fileId}/permissions`);
+  if (!res.ok) {
+    throw new Error(`Failed to list permissions: ${await res.text()}`);
+  }
+  
+  const data = await res.json();
   els.permissionsOutput.textContent = JSON.stringify(data, null, 2);
 }
 
 function previewItem(id) {
   const item = state.currentItems.find((f) => f.id === id);
   if (!item) return;
-
+  
   if (item.mimeType === 'application/vnd.google-apps.folder') {
     els.folderIdInput.value = item.id;
     listItems().catch((err) => log(err.message));
     return;
   }
-
+  
   els.previewFrame.src = `https://drive.google.com/file/d/${id}/preview`;
 }
 
 async function deleteItem(id) {
-  await driveRequest(`/files/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE}/drive/files/${id}`, {
+    method: 'DELETE',
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Delete failed: ${await res.text()}`);
+  }
+  
   log(`Deleted item ${id}`);
   await listItems();
 }
@@ -268,9 +238,11 @@ async function onTableClick(event) {
   const btn = event.target.closest('button[data-id]');
   if (!btn) return;
   const { action, id } = btn.dataset;
-
+  
   try {
-    if (action === 'preview') previewItem(id);
+    if (action === 'preview') {
+      previewItem(id);
+    }
     if (action === 'open') {
       const item = state.currentItems.find((f) => f.id === id);
       if (item?.mimeType === 'application/vnd.google-apps.folder') {
@@ -301,13 +273,12 @@ function wrapAsync(handler) {
       await handler();
     } catch (err) {
       log(err.message);
-      setAuthStatus(err.message);
+      setServerStatus(err.message);
     }
   };
 }
 
-els.authorizeBtn.addEventListener('click', wrapAsync(authorize));
-els.revokeBtn.addEventListener('click', wrapAsync(revoke));
+// Event Listeners
 els.refreshBtn.addEventListener('click', wrapAsync(listItems));
 els.goRootBtn.addEventListener('click', () => {
   els.folderIdInput.value = 'root';
@@ -320,4 +291,6 @@ els.shareBtn.addEventListener('click', wrapAsync(shareItem));
 els.listPermissionsBtn.addEventListener('click', wrapAsync(listPermissions));
 els.itemsBody.addEventListener('click', onTableClick);
 
-log('App ready. Enter your OAuth Client ID and click Authorize.');
+// Initialize
+log('App ready - No login required!');
+checkServerHealth();
