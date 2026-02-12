@@ -26,6 +26,35 @@ python3 -m http.server 8080
 5. Open `http://localhost:8080`.
 6. Paste your OAuth Client ID and click **Authorize**.
 
+## How to connect your Google account (step-by-step)
+
+If you are seeing connection/auth errors, follow this exact checklist:
+
+1. Go to **Google Cloud Console** → select/create a project.
+2. Open **APIs & Services → Library** and enable **Google Drive API**.
+3. Open **APIs & Services → OAuth consent screen**:
+   - Choose External (or Internal for Workspace).
+   - Fill app name and email.
+   - Add your Google account as a test user (if app is in testing mode).
+4. Open **APIs & Services → Credentials → Create Credentials → OAuth client ID**:
+   - Application type: **Web application**.
+   - Add Authorized JavaScript origin exactly as you run the app, e.g. `http://localhost:8080`.
+   - Save and copy the generated **Client ID**.
+5. Run this app with:
+
+```bash
+python3 -m http.server 8080
+```
+
+6. Open `http://localhost:8080`, paste Client ID, keep default scope, click **Authorize**.
+7. In Google popup, choose account and grant Drive permissions.
+
+### Common issues
+
+- **"origin_mismatch"**: your local URL is not listed in Authorized JavaScript origins.
+- **"access blocked" or unverified app**: consent screen/test users are not configured yet.
+- **Popup closes with no token**: browser blocked third-party popup/cookies; allow popups for localhost.
+
 ## Notes
 
 - Scope defaults to full Drive access (`https://www.googleapis.com/auth/drive`) so the app can create, update, share, and delete files.
